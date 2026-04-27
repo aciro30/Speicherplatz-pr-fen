@@ -2,12 +2,18 @@
 Modul zur Versendung von E-Mail-Benachrichtigungen.
 """
 import logging
+import os
 import socket
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import Dict, List, Any
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
 
 
 class EmailNotifier:
@@ -22,6 +28,10 @@ class EmailNotifier:
         """
         self.config = email_config
         self.logger = logging.getLogger(__name__)
+        if load_dotenv:
+            load_dotenv()
+        else:
+            self.logger.debug("python-dotenv ist nicht installiert; .env-Datei wird nicht geladen")
         
     def send_alert(self, critical_drives: List[Dict[str, Any]]):
         """
@@ -37,7 +47,7 @@ class EmailNotifier:
         if not self._validate_config():
             raise ValueError("Unvollständige E-Mail-Konfiguration")
         
-        sender = self.config.get("sender_email")
+        sender = os.getenv("SMTP_SENDER_EMAIL")
         recipients = self.config.get("recipient_emails", [])
         
         if not recipients:
@@ -55,13 +65,24 @@ class EmailNotifier:
         Returns:
             True falls gültig, False sonst
         """
-        required_fields = ["smtp_server", "smtp_port", "sender_email",
-                          "sender_password", "recipient_emails"]
+        required_fields = ["recipient_emails"]
         
         for field in required_fields:
             if field not in self.config:
                 self.logger.error(f"E-Mail-Konfigurationsfeld fehlt: {field}")
                 return False
+
+        required_env_fields = ["SMTP_SERVER", "SMTP_PORT", "SMTP_SENDER_EMAIL", "SMTP_PASSWORD"]
+        for field in required_env_fields:
+            if not os.getenv(field):
+                self.logger.error(f"Umgebungsvariable {field} fehlt")
+                return False
+
+        try:
+            int(os.getenv("SMTP_PORT", ""))
+        except ValueError:
+            self.logger.error("Umgebungsvariable SMTP_PORT muss eine Zahl sein")
+            return False
         
         return True
     
@@ -145,10 +166,10 @@ Ihr Speicherplatz-Monitor
         Raises:
             smtplib.SMTPException: Falls E-Mail-Versand fehlschlägt
         """
-        smtp_server = self.config.get("smtp_server")
-        smtp_port = self.config.get("smtp_port")
-        username = self.config.get("smtp_username") or sender
-        password = self.config.get("sender_password")
+        smtp_server = os.getenv("SMTP_SERVER")
+        smtp_port = int(os.getenv("SMTP_PORT"))
+        username = os.getenv("SMTP_USERNAME") or sender
+        password = os.getenv("SMTP_PASSWORD")
         
         try:
             self.logger.info(f"Verbinde zu SMTP-Server: {smtp_server}:{smtp_port}")

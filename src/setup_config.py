@@ -32,11 +32,6 @@ def build_config(config_path: str, threshold: int, overwrite: bool, auto_detect:
         "excluded_drives": [],
         "email": {
             "enabled": False,
-            "smtp_server": "smtp.gmail.com",
-            "smtp_port": 587,
-            "sender_email": "deine-email@gmail.com",
-            "smtp_username": "",
-            "sender_password": "dein-app-passwort",
             "recipient_emails": ["admin@example.com"],
             "email_subject": "Warnung: Speicherplatz kritisch",
         },

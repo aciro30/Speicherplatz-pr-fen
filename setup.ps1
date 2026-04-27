@@ -204,6 +204,45 @@ if ($LASTEXITCODE -ne 0) {
     throw "Konfiguration konnte nicht erstellt werden."
 }
 
+Write-Step "Environment-Datei pruefen"
+$envPath = Join-Path $projectRoot ".env"
+$envExamplePath = Join-Path $projectRoot ".env.example"
+if (-not (Test-Path $envPath)) {
+    if (Test-Path $envExamplePath) {
+        Copy-Item $envExamplePath $envPath
+        Write-Host ".env wurde aus .env.example erstellt. Bitte SMTP_PASSWORD vor produktiver Nutzung eintragen."
+    }
+    else {
+        Write-Host ".env.example wurde nicht gefunden. Bitte SMTP_PASSWORD als Umgebungsvariable setzen."
+    }
+}
+else {
+    Write-Host ".env existiert bereits: $envPath"
+}
+
+$envContent = @{}
+if (Test-Path $envPath) {
+    Get-Content $envPath | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#") -or -not $line.Contains("=")) {
+            return
+        }
+
+        $parts = $line.Split("=", 2)
+        $envContent[$parts[0].Trim()] = $parts[1].Trim()
+    }
+}
+
+$requiredEnvNames = @("SMTP_SERVER", "SMTP_PORT", "SMTP_SENDER_EMAIL", "SMTP_PASSWORD")
+$missingEnvNames = @($requiredEnvNames | Where-Object {
+    -not $envContent.ContainsKey($_) -or [string]::IsNullOrWhiteSpace($envContent[$_])
+})
+
+if ($missingEnvNames.Count -gt 0) {
+    Write-Warning "In .env fehlen noch folgende Werte: $($missingEnvNames -join ', ')"
+    Write-Warning "E-Mail-Versand funktioniert erst, wenn diese Werte gesetzt sind."
+}
+
 Write-Step "Testlauf ausfuehren"
 & $venvPython "src\disk_monitor.py" "--once"
 if ($LASTEXITCODE -ne 0) {

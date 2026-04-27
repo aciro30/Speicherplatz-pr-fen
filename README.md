@@ -82,11 +82,6 @@ python src/setup_config.py --overwrite
   ],
   "email": {
     "enabled": true,
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 587,
-    "sender_email": "deine-email@gmail.com",
-    "smtp_username": "",
-    "sender_password": "dein-app-passwort",
     "recipient_emails": ["admin@example.com"],
     "email_subject": "Warnung: Speicherplatz kritisch"
   },
@@ -110,11 +105,6 @@ python src/setup_config.py --overwrite
   ],
   "email": {
     "enabled": true,
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 587,
-    "sender_email": "deine-email@gmail.com",
-    "smtp_username": "",
-    "sender_password": "dein-app-passwort",
     "recipient_emails": ["admin@example.com"],
     "email_subject": "Warnung: Speicherplatz kritisch"
   },
@@ -196,26 +186,46 @@ py src\disk_monitor.py --config config\config.json --daemon
 
 1. Aktiviere 2-Faktor-Authentifizierung in deinem Google-Konto
 2. Generiere ein [App-Passwort](https://myaccount.google.com/apppasswords)
-3. Verwende dieses Passwort in der Konfiguration
+3. Trage dieses Passwort in `.env` als `SMTP_PASSWORD` ein
 
 ### Andere E-Mail-Anbieter
 
-Passe `smtp_server` und `smtp_port` an:
+Passe `SMTP_SERVER` und `SMTP_PORT` in `.env` an:
 - **Outlook**: smtp.office365.com (587)
 - **Yahoo**: smtp.mail.yahoo.com (587)
 - **T-Online**: smtp.t-online.de (587)
 
-### SMTP-Login abweichend vom Absender
+### SMTP-Konfiguration per `.env`
 
-Wenn der SMTP-Benutzername nicht identisch mit `sender_email` ist, kann `smtp_username` gesetzt werden:
+SMTP-Server, Absender und Zugangsdaten werden nicht in `config/config.json` gespeichert. Lege lokal eine `.env`-Datei an:
 
-```json
-"sender_email": "monitor@example.com",
-"smtp_username": "smtp-login@example.com",
-"sender_password": "dein-passwort"
+```powershell
+copy .env.example .env
 ```
 
-Wenn `smtp_username` leer bleibt oder fehlt, wird automatisch `sender_email` als Login verwendet.
+Trage dort die Zugangsdaten ein:
+
+```env
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SENDER_EMAIL=monitor@example.com
+SMTP_USERNAME=smtp-login@example.com
+SMTP_PASSWORD=dein-app-passwort
+```
+
+`SMTP_USERNAME` ist optional. Wenn es leer bleibt oder fehlt, wird `SMTP_SENDER_EMAIL` als SMTP-Benutzername verwendet.
+
+Die `.env`-Datei ist in `.gitignore` ausgeschlossen und sollte nicht auf GitHub veröffentlicht werden.
+
+### SMTP-Login abweichend vom Absender
+
+Wenn der SMTP-Benutzername nicht identisch mit der Absenderadresse ist, wird `SMTP_USERNAME` in `.env` gesetzt:
+
+```env
+SMTP_SENDER_EMAIL=monitor@example.com
+SMTP_USERNAME=smtp-login@example.com
+SMTP_PASSWORD=dein-passwort
+```
 
 ### Mehrere Empfänger
 
@@ -246,6 +256,8 @@ powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 ```
 
 Das Skript erstellt `venv`, installiert die Abhängigkeiten, erzeugt `config\config.json`, führt einen Testlauf aus und registriert danach den Scheduled Task. Standardmäßig läuft die Aufgabe alle 12 Stunden.
+
+Wenn noch keine `.env` existiert, erzeugt das Setup-Skript sie aus `.env.example`. Vor produktiver Nutzung müssen dort `SMTP_SERVER`, `SMTP_PORT`, `SMTP_SENDER_EMAIL` und `SMTP_PASSWORD` eingetragen werden, wenn E-Mail-Benachrichtigungen aktiviert sind.
 
 Die Aufgabe wird ohne Enddatum angelegt und standardmäßig auch ausgeführt, wenn der Benutzer nicht angemeldet ist. Dafür fragt Windows beim Setup nach den Anmeldedaten. Soll die Aufgabe nur laufen, wenn der Benutzer angemeldet ist:
 
@@ -348,8 +360,8 @@ Die Log-Datei wird in `logs/disk_monitor.log` gespeichert. Dort können alle Pr�
 - Falls nicht gefunden: Nutze den vollständigen Pfad zu Python, z.B. `C:\Python\python.exe src\disk_monitor.py`
 
 ### "E-Mail konnte nicht versendet werden"
-- Prüfe Absender-Adresse und Passwort in der Konfiguration
-- Prüfe SMTP-Server und Port-Einstellungen
+- Prüfe `SMTP_SERVER`, `SMTP_PORT`, `SMTP_SENDER_EMAIL` und `SMTP_PASSWORD` in `.env`
+- Prüfe optional `SMTP_USERNAME` in `.env`, falls der Login von der Absenderadresse abweicht
 - Prüfe Firewall/Proxy-Einstellungen
 - Für Gmail: Stelle sicher, dass ein [App-Passwort](https://myaccount.google.com/apppasswords) verwendet wird
 - Test der E-Mail-Einstellung: Bearbeite die Konfiguration und aktiviere `"enabled": true`
@@ -371,7 +383,7 @@ Die Log-Datei befindet sich unter `logs/disk_monitor.log`
 
 ## Lizenz
 
-MIT
+Dieses Projekt ist unter der MIT-Lizenz veröffentlicht. Siehe [LICENSE](LICENSE).
 
 ## Support
 
