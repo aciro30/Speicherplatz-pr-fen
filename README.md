@@ -36,6 +36,8 @@ Mit Aufgabenplanung alle 12 Stunden:
 powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 ```
 
+Dabei wird die Aufgabe ohne Enddatum angelegt und auch ausgeführt, wenn der Benutzer nicht angemeldet ist. Windows fragt dafür beim Einrichten nach den Anmeldedaten des Benutzers, unter dem die Aufgabe laufen soll.
+
 ### Schritt 2: Konfiguration erstellen
 
 1. Kopiere die Beispielkonfiguration:
@@ -244,6 +246,12 @@ powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 ```
 
 Das Skript erstellt `venv`, installiert die Abhängigkeiten, erzeugt `config\config.json`, führt einen Testlauf aus und registriert danach den Scheduled Task. Standardmäßig läuft die Aufgabe alle 12 Stunden.
+
+Die Aufgabe wird ohne Enddatum angelegt und standardmäßig auch ausgeführt, wenn der Benutzer nicht angemeldet ist. Dafür fragt Windows beim Setup nach den Anmeldedaten. Soll die Aufgabe nur laufen, wenn der Benutzer angemeldet ist:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask -RunOnlyWhenUserLoggedOn
+```
 
 Ein anderes Intervall kann in Minuten angegeben werden:
 

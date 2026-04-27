@@ -14,6 +14,9 @@
   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 
 .EXAMPLE
+  powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask -RunOnlyWhenUserLoggedOn
+
+.EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -OverwriteConfig -AutoDetect
 #>
 
@@ -23,6 +26,7 @@ param(
     [switch]$OverwriteConfig,
     [switch]$AutoDetect,
     [switch]$RegisterTask,
+    [switch]$RunOnlyWhenUserLoggedOn,
     [int]$IntervalMinutes = 720,
     [string]$TaskName = "Speicherplatz-Monitor"
 )
@@ -71,7 +75,8 @@ function Register-MonitorTask {
         [string]$Name,
         [string]$PythonExe,
         [string]$ProjectRoot,
-        [int]$Minutes
+        [int]$Minutes,
+        [switch]$OnlyWhenUserLoggedOn
     )
 
     if ($Minutes -lt 1) {
@@ -90,8 +95,7 @@ function Register-MonitorTask {
     $trigger = New-ScheduledTaskTrigger `
         -Once `
         -At $startAt `
-        -RepetitionInterval (New-TimeSpan -Minutes $Minutes) `
-        -RepetitionDuration (New-TimeSpan -Days 3650)
+        -RepetitionInterval (New-TimeSpan -Minutes $Minutes)
 
     $settings = New-ScheduledTaskSettingsSet `
         -AllowStartIfOnBatteries `
@@ -99,18 +103,51 @@ function Register-MonitorTask {
         -StartWhenAvailable
 
     $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $description = "Prueft regelmaessig den freien Speicherplatz und verschickt optional E-Mail-Warnungen."
+
+    if ($OnlyWhenUserLoggedOn) {
+        $principal = New-ScheduledTaskPrincipal `
+            -UserId $currentUser `
+            -LogonType Interactive `
+            -RunLevel Highest
+
+        $task = New-ScheduledTask `
+            -Action $action `
+            -Trigger $trigger `
+            -Settings $settings `
+            -Principal $principal `
+            -Description $description
+
+        Register-ScheduledTask `
+            -TaskName $Name `
+            -InputObject $task `
+            -Force | Out-Null
+
+        return
+    }
+
+    Write-Host "Fuer 'Ausfuehren unabhaengig von der Benutzeranmeldung' werden Windows-Anmeldedaten benoetigt."
+    $credential = Get-Credential `
+        -UserName $currentUser `
+        -Message "Windows-Anmeldedaten fuer den Scheduled Task '$Name'"
+
     $principal = New-ScheduledTaskPrincipal `
-        -UserId $currentUser `
-        -LogonType Interactive `
+        -UserId $credential.UserName `
+        -LogonType Password `
         -RunLevel Highest
 
-    Register-ScheduledTask `
-        -TaskName $Name `
+    $task = New-ScheduledTask `
         -Action $action `
         -Trigger $trigger `
         -Settings $settings `
         -Principal $principal `
-        -Description "Prueft regelmaessig den freien Speicherplatz und verschickt optional E-Mail-Warnungen." `
+        -Description $description
+
+    Register-ScheduledTask `
+        -TaskName $Name `
+        -InputObject $task `
+        -User $credential.UserName `
+        -Password $credential.GetNetworkCredential().Password `
         -Force | Out-Null
 }
 
@@ -179,10 +216,17 @@ if ($RegisterTask) {
         -Name $TaskName `
         -PythonExe $venvPython `
         -ProjectRoot $projectRoot `
-        -Minutes $IntervalMinutes
+        -Minutes $IntervalMinutes `
+        -OnlyWhenUserLoggedOn:$RunOnlyWhenUserLoggedOn
 
     Write-Host "Scheduled Task registriert: $TaskName"
     Write-Host "Intervall: alle $IntervalMinutes Minuten"
+    if ($RunOnlyWhenUserLoggedOn) {
+        Write-Host "Ausfuehrung: nur wenn der Benutzer angemeldet ist"
+    }
+    else {
+        Write-Host "Ausfuehrung: auch wenn der Benutzer nicht angemeldet ist"
+    }
 }
 
 Write-Host ""
