@@ -2,6 +2,7 @@
 Modul zur Versendung von E-Mail-Benachrichtigungen.
 """
 import logging
+import socket
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -75,12 +76,15 @@ class EmailNotifier:
             Formatierter E-Mail-Text
         """
         timestamp = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        system_info = self._get_system_info()
         
         body = f"""
 Speicherplatz-Warnung
 =====================
 
 Zeitstempel: {timestamp}
+Rechnername: {system_info['hostname']}
+Lokale IP-Adresse: {system_info['local_ip']}
 
 Die folgenden Laufwerke haben den kritischen Speicherplatz-Schwellenwert überschritten:
 
@@ -106,6 +110,26 @@ Ihr Speicherplatz-Monitor
 """
         
         return body
+
+    def _get_system_info(self) -> Dict[str, str]:
+        """Ermittelt Rechnername und lokale IP-Adresse fuer die Benachrichtigung."""
+        hostname = socket.gethostname()
+        local_ip = "Unbekannt"
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.connect(("8.8.8.8", 80))
+                local_ip = sock.getsockname()[0]
+        except OSError:
+            try:
+                local_ip = socket.gethostbyname(hostname)
+            except OSError:
+                self.logger.debug("Lokale IP-Adresse konnte nicht ermittelt werden")
+
+        return {
+            "hostname": hostname,
+            "local_ip": local_ip,
+        }
     
     def _send_email(self, sender: str, recipients: List[str], 
                    subject: str, body: str):

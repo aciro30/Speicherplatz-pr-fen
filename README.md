@@ -30,10 +30,10 @@ Unter Windows kann stattdessen das Setup-Skript verwendet werden:
 powershell -ExecutionPolicy Bypass -File .\setup.ps1
 ```
 
-Mit Aufgabenplanung alle 60 Minuten:
+Mit Aufgabenplanung alle 12 Stunden:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask -IntervalMinutes 60
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 ```
 
 ### Schritt 2: Konfiguration erstellen
@@ -159,7 +159,7 @@ python src/disk_monitor.py
 
 Oder unter Windows (PowerShell oder CMD):
 ```cmd
-python src\disk_monitor.py
+py src\disk_monitor.py
 ```
 
 ### Daemon-Modus (kontinuierliche Überwachung)
@@ -170,7 +170,7 @@ python src/disk_monitor.py --daemon
 
 Oder unter Windows (PowerShell oder CMD):
 ```cmd
-python src\disk_monitor.py --daemon
+py src\disk_monitor.py --daemon
 ```
 
 ### Mit benutzerdefinierten Konfigurationen
@@ -182,8 +182,8 @@ python src/disk_monitor.py --config /pfad/zur/config.json --daemon
 
 Oder unter Windows:
 ```cmd
-python src\disk_monitor.py --config config\config.json
-python src\disk_monitor.py --config config\config.json --daemon
+py src\disk_monitor.py --config config\config.json
+py src\disk_monitor.py --config config\config.json --daemon
 ```
 
 ## E-Mail-Konfiguration
@@ -201,6 +201,24 @@ Passe `smtp_server` und `smtp_port` an:
 - **Yahoo**: smtp.mail.yahoo.com (587)
 - **T-Online**: smtp.t-online.de (587)
 
+### Mehrere Empfänger
+
+Mehrere Empfänger werden in `recipient_emails` als JSON-Liste eingetragen:
+
+```json
+"recipient_emails": [
+  "admin@example.com",
+  "technik@example.com",
+  "it-alerts@example.com"
+]
+```
+
+Nicht als einzelner komma-getrennter String eintragen. Der E-Mail-Versand verbindet die Listeneinträge intern korrekt.
+
+### Rechnername und lokale IP
+
+Die Warn-E-Mail enthält automatisch den Rechnernamen und die lokale IP-Adresse. Dadurch ist auch bei mehreren Installationen erkennbar, von welchem Rechner die Meldung kommt.
+
 ## Automatische Ausführung
 
 ### Windows (Task Scheduler) - Empfohlen ⭐
@@ -208,10 +226,16 @@ Passe `smtp_server` und `smtp_port` an:
 Automatisch per Setup-Skript:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask -IntervalMinutes 60
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 ```
 
-Das Skript erstellt `venv`, installiert die Abhängigkeiten, erzeugt `config\config.json`, führt einen Testlauf aus und registriert danach den Scheduled Task.
+Das Skript erstellt `venv`, installiert die Abhängigkeiten, erzeugt `config\config.json`, führt einen Testlauf aus und registriert danach den Scheduled Task. Standardmäßig läuft die Aufgabe alle 12 Stunden.
+
+Ein anderes Intervall kann in Minuten angegeben werden:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask -IntervalMinutes 60
+```
 
 **Einmalige Prüfung stündlich:**
 
@@ -227,7 +251,7 @@ Das Skript erstellt `venv`, installiert die Abhängigkeiten, erzeugt `config\con
    - Stelle das Zeitintervall ein
 
 5. **Aktion**:
-   - Programm/Skript: `python`
+   - Programm/Skript: `py`
    - Argumente: `src\disk_monitor.py`
    - Arbeitsverzeichnis: `C:\pfad\zum\Speicherplatz-prüfen`
 
@@ -246,7 +270,7 @@ Folge denselben Schritten, aber:
 **Wichtig**: 
 - Achte auf die richtige Arbeitsverzeichnis-Pfad
 - Verwende Backslashes `\` im Task Scheduler
-- Python muss im System-PATH vorhanden sein oder den vollständigen Pfad angeben
+- Wenn `python` in PowerShell nicht funktioniert, verwende `py`. Das Setup-Skript selbst nutzt fuer die Aufgabe die Python-Datei aus `venv\Scripts\python.exe`.
 
 ### macOS/Linux (Cron)
 

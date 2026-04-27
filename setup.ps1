@@ -11,7 +11,7 @@
   powershell -ExecutionPolicy Bypass -File .\setup.ps1
 
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask -IntervalMinutes 60
+  powershell -ExecutionPolicy Bypass -File .\setup.ps1 -RegisterTask
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -OverwriteConfig -AutoDetect
@@ -23,7 +23,7 @@ param(
     [switch]$OverwriteConfig,
     [switch]$AutoDetect,
     [switch]$RegisterTask,
-    [int]$IntervalMinutes = 60,
+    [int]$IntervalMinutes = 720,
     [string]$TaskName = "Speicherplatz-Monitor"
 )
 
