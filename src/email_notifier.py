@@ -55,7 +55,7 @@ class EmailNotifier:
         Returns:
             True falls gültig, False sonst
         """
-        required_fields = ["smtp_server", "smtp_port", "sender_email", 
+        required_fields = ["smtp_server", "smtp_port", "sender_email",
                           "sender_password", "recipient_emails"]
         
         for field in required_fields:
@@ -147,6 +147,7 @@ Ihr Speicherplatz-Monitor
         """
         smtp_server = self.config.get("smtp_server")
         smtp_port = self.config.get("smtp_port")
+        username = self.config.get("smtp_username") or sender
         password = self.config.get("sender_password")
         
         try:
@@ -154,7 +155,7 @@ Ihr Speicherplatz-Monitor
             
             with smtplib.SMTP(smtp_server, smtp_port) as server:
                 server.starttls()
-                server.login(sender, password)
+                server.login(username, password)
                 
                 # Erstelle E-Mail-Nachricht
                 message = MIMEMultipart()

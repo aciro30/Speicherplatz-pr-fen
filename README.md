@@ -83,6 +83,7 @@ python src/setup_config.py --overwrite
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "sender_email": "deine-email@gmail.com",
+    "smtp_username": "",
     "sender_password": "dein-app-passwort",
     "recipient_emails": ["admin@example.com"],
     "email_subject": "Warnung: Speicherplatz kritisch"
@@ -110,6 +111,7 @@ python src/setup_config.py --overwrite
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
     "sender_email": "deine-email@gmail.com",
+    "smtp_username": "",
     "sender_password": "dein-app-passwort",
     "recipient_emails": ["admin@example.com"],
     "email_subject": "Warnung: Speicherplatz kritisch"
@@ -200,6 +202,18 @@ Passe `smtp_server` und `smtp_port` an:
 - **Outlook**: smtp.office365.com (587)
 - **Yahoo**: smtp.mail.yahoo.com (587)
 - **T-Online**: smtp.t-online.de (587)
+
+### SMTP-Login abweichend vom Absender
+
+Wenn der SMTP-Benutzername nicht identisch mit `sender_email` ist, kann `smtp_username` gesetzt werden:
+
+```json
+"sender_email": "monitor@example.com",
+"smtp_username": "smtp-login@example.com",
+"sender_password": "dein-passwort"
+```
+
+Wenn `smtp_username` leer bleibt oder fehlt, wird automatisch `sender_email` als Login verwendet.
 
 ### Mehrere Empfänger
 
