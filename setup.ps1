@@ -101,7 +101,7 @@ function Register-MonitorTask {
     $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     $principal = New-ScheduledTaskPrincipal `
         -UserId $currentUser `
-        -LogonType InteractiveToken `
+        -LogonType Interactive `
         -RunLevel Highest
 
     Register-ScheduledTask `
