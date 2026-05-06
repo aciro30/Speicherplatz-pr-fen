@@ -8,6 +8,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Any
 
 try:
@@ -29,7 +30,8 @@ class EmailNotifier:
         self.config = email_config
         self.logger = logging.getLogger(__name__)
         if load_dotenv:
-            load_dotenv()
+            env_path = Path(__file__).resolve().parent.parent / ".env"
+            load_dotenv(env_path)
         else:
             self.logger.debug("python-dotenv ist nicht installiert; .env-Datei wird nicht geladen")
         
