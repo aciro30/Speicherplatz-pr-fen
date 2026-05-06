@@ -29,11 +29,32 @@ class EmailNotifier:
         """
         self.config = email_config
         self.logger = logging.getLogger(__name__)
+        self._load_env_file()
+
+    def _load_env_file(self):
+        """Laedt .env aus dem Projektordner, auch ohne python-dotenv."""
+        env_path = Path(__file__).resolve().parent.parent / ".env"
+
         if load_dotenv:
-            env_path = Path(__file__).resolve().parent.parent / ".env"
             load_dotenv(env_path)
-        else:
-            self.logger.debug("python-dotenv ist nicht installiert; .env-Datei wird nicht geladen")
+            return
+
+        if not env_path.exists():
+            self.logger.debug(f".env-Datei nicht gefunden: {env_path}")
+            return
+
+        self.logger.debug("python-dotenv ist nicht installiert; nutze einfachen .env-Fallback")
+        with open(env_path, "r", encoding="utf-8") as env_file:
+            for raw_line in env_file:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
         
     def send_alert(self, critical_drives: List[Dict[str, Any]]):
         """
